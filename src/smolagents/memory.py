@@ -23,11 +23,22 @@ logger = getLogger(__name__)
 
 @dataclass
 class ToolCall:
+    """Record of a single tool invocation requested by the model.
+
+    Attributes:
+        name (str): Name of the tool that was called.
+        arguments (Any): Arguments passed to the tool, typically a dict
+            or JSON-serializable object.
+        id (str): Unique call identifier assigned by the model (mirrors the
+            OpenAI ``tool_calls[].id`` field).
+    """
+
     name: str
     arguments: Any
     id: str
 
-    def dict(self):
+    def dict(self) -> dict:
+        """Return an OpenAI-compatible tool-call dict representation."""
         return {
             "id": self.id,
             "type": "function",
@@ -40,21 +51,73 @@ class ToolCall:
 
 @dataclass
 class MemoryStep:
-    def dict(self):
+    """Abstract base class for all memory step types.
+
+    Subclasses represent the different kinds of events that can occur during
+    an agent run: :class:`TaskStep`, :class:`ActionStep`, :class:`PlanningStep`,
+    :class:`SystemPromptStep`, and :class:`FinalAnswerStep`.
+    """
+
+    def dict(self) -> dict:
+        """Return a dict representation of this step."""
         return asdict(self)
 
-    def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
+    def to_messages(self, summary_mode: bool = False) -> list["ChatMessage"]:
+        """Convert this step to a list of :class:`~smolagents.models.ChatMessage` objects.
+
+        Args:
+            summary_mode (bool): When ``True``, some steps omit verbose
+                content to produce a compact memory view.  Defaults to ``False``.
+
+        Returns:
+            list[ChatMessage]: Messages representing this step for inclusion in
+            the model's context window.
+
+        Raises:
+            NotImplementedError: Subclasses must implement this method.
+        """
         raise NotImplementedError
 
 
 @dataclass
 class ActionStep(MemoryStep):
+    """Records everything that happened during a single agent action step.
+
+    An action step corresponds to one full turn of the agent loop: the model
+    is called, optionally invokes a tool, and receives an observation.
+
+    Attributes:
+        step_number (int): 1-based index of this step within the current run.
+        timing (Timing): Wall-clock start/end times for the step.
+        model_input_messages (list[ChatMessage] | None): Messages sent to the
+            model as the prompt for this step.
+        tool_calls (list[ToolCall] | None): Tool calls requested by the model,
+            if any.
+        error (AgentError | None): Error raised during tool execution or model
+            parsing, if any.
+        model_output_message (ChatMessage | None): The raw assistant message
+            returned by the model.
+        model_output (str | list[dict] | None): Parsed text or structured
+            output from the model response.
+        code_action (str | None): Extracted Python code block, populated by
+            :class:`~smolagents.agents.CodeAgent`.
+        observations (str | None): Text observation returned after tool
+            execution or code execution.
+        observations_images (list[PIL.Image.Image] | None): Image observations
+            returned by visual tools.
+        action_output (Any): Return value of the executed tool or code block.
+        token_usage (TokenUsage | None): Token counts for this step's model
+            call.
+        is_final_answer (bool): ``True`` when the agent has signalled that
+            this step contains the final answer to the task.
+    """
+
     step_number: int
     timing: Timing
-    model_input_messages: list[ChatMessage] | None = None
+    model_input_messages: list["ChatMessage"] | None = None
     tool_calls: list[ToolCall] | None = None
     error: AgentError | None = None
-    model_output_message: ChatMessage | None = None
+    model_output_message: "ChatMessage | None" = None
     model_output: str | list[dict[str, Any]] | None = None
     code_action: str | None = None
     observations: str | None = None
@@ -63,7 +126,7 @@ class ActionStep(MemoryStep):
     token_usage: TokenUsage | None = None
     is_final_answer: bool = False
 
-    def dict(self):
+    def dict(self) -> dict:
         # We overwrite the method to parse the tool_calls and action_output manually
         return {
             "step_number": self.step_number,
@@ -89,7 +152,22 @@ class ActionStep(MemoryStep):
             "is_final_answer": self.is_final_answer,
         }
 
-    def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
+    def to_messages(self, summary_mode: bool = False) -> list["ChatMessage"]:
+        """Convert this action step to model-ready chat messages.
+
+        In summary mode the raw model output text is omitted, keeping only
+        tool calls, observations, and errors so that the context window is
+        not inflated when replaying history.
+
+        Args:
+            summary_mode (bool): If ``True``, skip the raw model output
+                message.  Defaults to ``False``.
+
+        Returns:
+            list[ChatMessage]: Between 0 and 4 messages representing:
+                the model output (if any), tool calls, image observations,
+                text observations, and errors.
+        """
         messages = []
         if self.model_output is not None and not summary_mode:
             messages.append(
@@ -152,13 +230,30 @@ class ActionStep(MemoryStep):
 
 @dataclass
 class PlanningStep(MemoryStep):
-    model_input_messages: list[ChatMessage]
-    model_output_message: ChatMessage
+    """Records the output of an optional planning call made before action steps.
+
+    Some agent variants call the model once at the start of a task (or
+    periodically) to produce a high-level plan before executing individual
+    tool-use steps.  This step captures that planning exchange.
+
+    Attributes:
+        model_input_messages (list[ChatMessage]): Prompt messages sent to the
+            model for planning.
+        model_output_message (ChatMessage): Raw assistant message returned by
+            the model.
+        plan (str): The extracted plain-text plan produced by the model.
+        timing (Timing): Wall-clock start/end times for the planning call.
+        token_usage (TokenUsage | None): Token counts for the planning call,
+            or ``None`` if not tracked.
+    """
+
+    model_input_messages: list["ChatMessage"]
+    model_output_message: "ChatMessage"
     plan: str
     timing: Timing
     token_usage: TokenUsage | None = None
 
-    def dict(self):
+    def dict(self) -> dict:
         return {
             "model_input_messages": [
                 make_json_serializable(get_dict_from_nested_dataclasses(msg)) for msg in self.model_input_messages
@@ -171,7 +266,20 @@ class PlanningStep(MemoryStep):
             "token_usage": asdict(self.token_usage) if self.token_usage else None,
         }
 
-    def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
+    def to_messages(self, summary_mode: bool = False) -> list["ChatMessage"]:
+        """Convert this planning step to model-ready chat messages.
+
+        In summary mode, planning steps are excluded from the history to
+        prevent the context window from growing with repeated plan text.
+
+        Args:
+            summary_mode (bool): If ``True``, return an empty list.
+                Defaults to ``False``.
+
+        Returns:
+            list[ChatMessage]: Two messages (plan + follow-up instruction) in
+            normal mode, or an empty list in summary mode.
+        """
         if summary_mode:
             return []
         return [
@@ -179,16 +287,34 @@ class PlanningStep(MemoryStep):
             ChatMessage(
                 role=MessageRole.USER, content=[{"type": "text", "text": "Now proceed and carry out this plan."}]
             ),
-            # This second message creates a role change to prevent models models from simply continuing the plan message
+            # This second message creates a role change to prevent models from simply continuing the plan message
         ]
 
 
 @dataclass
 class TaskStep(MemoryStep):
+    """Records the user task that initiated an agent run.
+
+    Attributes:
+        task (str): The natural-language task or question given to the agent.
+        task_images (list[PIL.Image.Image] | None): Optional images provided
+            alongside the text task (for multi-modal agents).
+    """
+
     task: str
     task_images: list["PIL.Image.Image"] | None = None
 
-    def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
+    def to_messages(self, summary_mode: bool = False) -> list["ChatMessage"]:
+        """Convert the task to a user chat message.
+
+        Args:
+            summary_mode (bool): Unused; task steps are always included.
+                Defaults to ``False``.
+
+        Returns:
+            list[ChatMessage]: A single user message containing the task text
+            and any attached images.
+        """
         content = [{"type": "text", "text": f"New task:\n{self.task}"}]
         if self.task_images:
             content.extend([{"type": "image", "image": image} for image in self.task_images])
@@ -198,9 +324,26 @@ class TaskStep(MemoryStep):
 
 @dataclass
 class SystemPromptStep(MemoryStep):
+    """Records the system prompt injected at the start of every agent context.
+
+    Attributes:
+        system_prompt (str): The full system prompt text given to the model.
+    """
+
     system_prompt: str
 
-    def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
+    def to_messages(self, summary_mode: bool = False) -> list["ChatMessage"]:
+        """Convert the system prompt to a system chat message.
+
+        Args:
+            summary_mode (bool): If ``True``, return an empty list so that the
+                system prompt is omitted from summary-mode context.
+                Defaults to ``False``.
+
+        Returns:
+            list[ChatMessage]: A single system message, or an empty list in
+            summary mode.
+        """
         if summary_mode:
             return []
         return [ChatMessage(role=MessageRole.SYSTEM, content=[{"type": "text", "text": self.system_prompt}])]
@@ -208,6 +351,13 @@ class SystemPromptStep(MemoryStep):
 
 @dataclass
 class FinalAnswerStep(MemoryStep):
+    """Records the final answer produced at the end of an agent run.
+
+    Attributes:
+        output (Any): The final answer value returned to the caller.  May be
+            a string, image, or any other type supported by the agent.
+    """
+
     output: Any
 
 
@@ -225,11 +375,11 @@ class AgentMemory:
         - **steps** (`list[TaskStep | ActionStep | PlanningStep]`) -- List of steps taken by the agent, which can include tasks, actions, and planning steps.
     """
 
-    def __init__(self, system_prompt: str):
+    def __init__(self, system_prompt: str) -> None:
         self.system_prompt: SystemPromptStep = SystemPromptStep(system_prompt=system_prompt)
         self.steps: list[TaskStep | ActionStep | PlanningStep] = []
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset the agent's memory, clearing all steps and keeping the system prompt."""
         self.steps = []
 
@@ -245,7 +395,7 @@ class AgentMemory:
             return []
         return [step.dict() for step in self.steps]
 
-    def replay(self, logger: AgentLogger, detailed: bool = False):
+    def replay(self, logger: AgentLogger, detailed: bool = False) -> None:
         """Prints a pretty replay of the agent's steps.
 
         Args:
@@ -283,10 +433,10 @@ class CallbackRegistry:
     Callbacks are registered by passing a step class and a callback function.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._callbacks: dict[Type[MemoryStep], list[Callable]] = {}
 
-    def register(self, step_cls: Type[MemoryStep], callback: Callable):
+    def register(self, step_cls: Type[MemoryStep], callback: Callable) -> None:
         """Register a callback for a step class.
 
         Args:
@@ -297,7 +447,7 @@ class CallbackRegistry:
             self._callbacks[step_cls] = []
         self._callbacks[step_cls].append(callback)
 
-    def callback(self, memory_step, **kwargs):
+    def callback(self, memory_step: MemoryStep, **kwargs: Any) -> None:
         """Call callbacks registered for a step type.
 
         Args:
