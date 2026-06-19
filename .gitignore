@@ -67,6 +67,18 @@ coverage.xml
 cover/
 uv.lock
 
+# Benchmark results
+benchmark_results/
+.benchmarks/
+
+# Profiling output
+*.prof
+*.lprof
+profile_output/
+
+# Ruff cache
+.ruff_cache/
+
 # Translations
 *.mo
 *.pot
@@ -150,3 +162,9 @@ tool_output/
 
 # Gradio runtime
 .gradio/
+
+# Editor swap / backup files
+*.swp
+*.swo
+*~
+*.orig
