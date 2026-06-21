@@ -17,6 +17,8 @@ data/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.pyc
+*.pyo
 *$py.class
 
 # C extensions
@@ -80,6 +82,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+**/.ipynb_checkpoints/
 
 # IPython
 profile_default/
@@ -138,6 +141,23 @@ cython_debug/
 
 # PyCharm
 .idea/
+
+# Ruff linter cache
+.ruff_cache/
+
+# Profiling output
+*.prof
+*.lprof
+
+# Benchmark results
+.benchmarks/
+benchmark_results/
+
+# Editor swap / backup files
+*.swp
+*.swo
+*~
+*.orig
 
 # Interpreter
 interpreter_workspace/
