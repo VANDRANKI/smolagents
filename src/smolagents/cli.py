@@ -42,7 +42,13 @@ console = Console()
 leopard_prompt = "How many seconds would it take for a leopard at full speed to run through Pont des Arts?"
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
+    """Parse command-line arguments for the smolagents CLI.
+
+    Returns:
+        Parsed argument namespace.  When no ``prompt`` is supplied the CLI
+        enters interactive mode.
+    """
     parser = argparse.ArgumentParser(description="Run a CodeAgent with all specified parameters")
     parser.add_argument(
         "prompt",
@@ -107,11 +113,17 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def interactive_mode():
-    """Run the CLI in interactive mode"""
+def interactive_mode() -> tuple[str, list[str], str, str, str | None, str | None, str | None, list[str], str]:
+    """Run the CLI in interactive mode, prompting the user for all settings.
+
+    Returns:
+        A tuple of
+        ``(prompt, tools, model_type, model_id, provider, api_base, api_key,
+        imports, action_type)`` collected from the user.
+    """
     console.print(
         Panel.fit(
-            "[bold magenta]🤖 SmolaGents CLI[/]\n[dim]Intelligent agents at your service[/]", border_style="magenta"
+            "[bold magenta]\U0001f916 SmolaGents CLI[/]\n[dim]Intelligent agents at your service[/]", border_style="magenta"
         )
     )
 
@@ -128,7 +140,7 @@ def interactive_mode():
     )
 
     # Show available tools
-    tools_table = Table(title="[bold yellow]🛠️  Available Tools", show_header=True, header_style="bold yellow")
+    tools_table = Table(title="[bold yellow]\U0001f6e0️  Available Tools", show_header=True, header_style="bold yellow")
     tools_table.add_column("Tool Name", style="bold yellow")
     tools_table.add_column("Description", style="white")
 
@@ -164,8 +176,8 @@ def interactive_mode():
     provider = None
     api_base = None
     api_key = None
-    imports = []
-    action_type = "code"
+    imports: list[str] = []
+    # NOTE: action_type is already set from the prompt above; do not reset it here.
 
     if Confirm.ask("\n[bold white]Configure advanced options?[/]", default=False):
         if model_type in ["InferenceClientModel", "OpenAIServerModel", "LiteLLMModel"]:
@@ -192,6 +204,26 @@ def load_model(
     api_key: str | None = None,
     provider: str | None = None,
 ) -> Model:
+    """Instantiate the requested model class.
+
+    Args:
+        model_type: One of ``"OpenAIModel"``, ``"LiteLLMModel"``,
+            ``"TransformersModel"``, or ``"InferenceClientModel"``.
+        model_id: Model identifier string (e.g. a HuggingFace repo ID or an
+            OpenAI model name).
+        api_base: Optional base URL for API-backed models.
+        api_key: Optional API key.  Falls back to environment variables when
+            ``None`` (``FIREWORKS_API_KEY`` for OpenAI, ``HF_API_KEY`` for
+            InferenceClient).
+        provider: Optional inference provider name (used by
+            ``InferenceClientModel``).
+
+    Returns:
+        An initialised :class:`~smolagents.Model` instance.
+
+    Raises:
+        ValueError: If ``model_type`` is not one of the supported values.
+    """
     if model_type == "OpenAIModel":
         return OpenAIModel(
             api_key=api_key or os.getenv("FIREWORKS_API_KEY"),
@@ -227,11 +259,41 @@ def run_smolagent(
     provider: str | None = None,
     action_type: str = "code",
 ) -> None:
+    """Build and run a smolagents agent from plain configuration values.
+
+    Loads environment variables from a ``.env`` file, instantiates the
+    requested model and tools, builds either a
+    :class:`~smolagents.CodeAgent` or a
+    :class:`~smolagents.ToolCallingAgent`, and calls
+    :meth:`~smolagents.MultiStepAgent.run` with ``prompt``.
+
+    Args:
+        prompt: The task description to pass to the agent.
+        tools: List of tool names.  Each entry is either a key in
+            :data:`~smolagents.default_tools.TOOL_MAPPING` or a HuggingFace
+            Space path (``"owner/space-name"``).
+        model_type: Model class name; see :func:`load_model` for accepted
+            values.
+        model_id: Model identifier passed to the model constructor.
+        api_base: Optional API base URL.
+        api_key: Optional API key.
+        imports: Additional Python module names that the
+            :class:`~smolagents.CodeAgent` is allowed to import inside
+            generated code.  Ignored when ``action_type="tool_calling"``.
+        provider: Optional inference provider name.
+        action_type: Either ``"code"`` (default) for
+            :class:`~smolagents.CodeAgent` or ``"tool_calling"`` for
+            :class:`~smolagents.ToolCallingAgent`.
+
+    Raises:
+        ValueError: If a tool name is not recognised and is not a valid
+            HuggingFace Space path, or if ``action_type`` is unsupported.
+    """
     load_dotenv()
 
     model = load_model(model_type, model_id, api_base=api_base, api_key=api_key, provider=provider)
 
-    available_tools = []
+    available_tools: list[Tool] = []
 
     for tool_name in tools:
         if "/" in tool_name:
@@ -260,6 +322,13 @@ def run_smolagent(
 
 
 def main() -> None:
+    """Entry point for the ``smolagents`` CLI command.
+
+    Parses command-line arguments (see :func:`parse_arguments`).  When no
+    ``prompt`` argument is supplied, drops into :func:`interactive_mode` to
+    collect all settings from the user interactively.  Then delegates to
+    :func:`run_smolagent`.
+    """
     args = parse_arguments()
 
     # Check if we should run in interactive mode
