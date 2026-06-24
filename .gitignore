@@ -1,152 +1,50 @@
-# Logging
-logs
-tmp
-wandb
-
-# Data
-data
-outputs
-data/
-
-# Apple
-.DS_Store
-
-# VS Code
-.vscode
-
-# Byte-compiled / optimized / DLL files
+# Python bytecode
 __pycache__/
 *.py[cod]
-*$py.class
-
-# C extensions
+*.pyo
+*.pyd
 *.so
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-node_modules/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-uv.lock
-
-# Translations
-*.mo
-*.pot
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-# .python-version
-
-# pipenv
-#Pipfile.lock
-
-# poetry
-#poetry.lock
-
-# pdm
-.pdm.toml
-.pdm-python
-.pdm-build/
-
-# PEP 582
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
+# Virtual environments
 .env
-.venv
+.venv/
 env/
 venv/
 ENV/
-env.bak/
-venv.bak/
 
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
 
-# mkdocs documentation
-/site
+# Test caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
 
-# mypy
+# Type and lint caches
 .mypy_cache/
-.dmypy.json
-dmypy.json
+.ruff_cache/
 
-# Pyre type checker
-.pyre/
+# Jupyter
+.ipynb_checkpoints/
 
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
+# IDE
 .idea/
+.vscode/
+*.swp
+*.swo
 
-# Interpreter
-interpreter_workspace/
+# macOS
+.DS_Store
 
-# Archive
-archive/
-savedir/
-output/
-tool_output/
+# Secrets / environment
+.env.local
+*.env
 
-# Gradio runtime
-.gradio/
+# Build artifacts
+*.whl
