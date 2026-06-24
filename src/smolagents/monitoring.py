@@ -79,6 +79,25 @@ class Timing:
 
 
 class Monitor:
+    """Tracks performance metrics across inference steps of an agent run.
+
+    Aggregates per-step token usage and wall-clock timing, accumulating totals
+    so callers can inspect overall resource consumption after a run completes.
+    Emits a one-line summary to the logger after each step via `update_metrics`.
+
+    Args:
+        tracked_model: The model instance being monitored. Currently stored for
+            reference but not queried directly by Monitor itself.
+        logger (AgentLogger): Logger used to emit per-step metric summaries at
+            `LogLevel.INFO`.
+
+    Attributes:
+        step_durations (list[float]): Wall-clock duration in seconds for each
+            completed step, in order.
+        total_input_token_count (int): Cumulative input tokens across all steps.
+        total_output_token_count (int): Cumulative output tokens across all steps.
+    """
+
     def __init__(self, tracked_model, logger):
         self.step_durations = []
         self.tracked_model = tracked_model
@@ -128,6 +147,24 @@ YELLOW_HEX = "#d4b702"
 
 
 class AgentLogger:
+    """Console logger for agent runs with Rich-based output formatting.
+
+    Wraps a Rich `Console` instance and gates all output behind a configurable
+    log level. Methods are named after the type of content they render (code
+    blocks, markdown, task panels, etc.) rather than severity levels.
+
+    Args:
+        level (LogLevel): Minimum level a message must have to be printed.
+            Defaults to `LogLevel.INFO`. Set to `LogLevel.DEBUG` for verbose
+            output or `LogLevel.OFF` to silence all output.
+        console (Console | None): Rich console to write to. A new
+            ``Console(highlight=False)`` is created when ``None`` is passed.
+
+    Attributes:
+        level (LogLevel): The current minimum log level.
+        console (Console): The underlying Rich console instance.
+    """
+
     def __init__(self, level: LogLevel = LogLevel.INFO, console: Console | None = None):
         self.level = level
         if console is None:
@@ -136,10 +173,17 @@ class AgentLogger:
             self.console = console
 
     def log(self, *args, level: int | str | LogLevel = LogLevel.INFO, **kwargs) -> None:
-        """Logs a message to the console.
+        """Print a message to the console if `level` meets the threshold.
+
+        Accepts the same positional and keyword arguments as `rich.Console.print`.
+        The message is suppressed when `level` is below `self.level`.
 
         Args:
-            level (LogLevel, optional): Defaults to LogLevel.INFO.
+            *args: Positional renderables passed through to `Console.print`.
+            level (int | str | LogLevel): Log level for this message. String
+                values are resolved by name (e.g. ``"DEBUG"``). Defaults to
+                `LogLevel.INFO`.
+            **kwargs: Keyword arguments forwarded to `Console.print`.
         """
         if isinstance(level, str):
             level = LogLevel[level.upper()]
@@ -147,9 +191,27 @@ class AgentLogger:
             self.console.print(*args, **kwargs)
 
     def log_error(self, error_message: str) -> None:
+        """Print an error message in bold red at `LogLevel.ERROR`.
+
+        Args:
+            error_message: The error text to display. Rich markup characters
+                are sanitized before rendering to avoid parse errors.
+        """
         self.log(Text(sanitize_for_rich(error_message), style="bold red"), level=LogLevel.ERROR)
 
     def log_markdown(self, content: str, title: str | None = None, level=LogLevel.INFO, style=YELLOW_HEX) -> None:
+        """Render a markdown string with optional section header.
+
+        Uses a ``github-dark`` syntax-highlighted block. When `title` is
+        provided, a Rule separator is printed above the block.
+
+        Args:
+            content: Markdown text to render.
+            title: Optional section title shown in the rule above the block.
+            level: Log level for this output. Defaults to `LogLevel.INFO`.
+            style: Rich color string for the rule and title. Defaults to
+                the agent yellow ``#d4b702``.
+        """
         markdown_content = Syntax(
             content,
             lexer="markdown",
@@ -172,6 +234,15 @@ class AgentLogger:
             self.log(markdown_content, level=level)
 
     def log_code(self, title: str, content: str, level: int = LogLevel.INFO) -> None:
+        """Render a Python code block inside a titled panel.
+
+        Uses Monokai syntax highlighting with word-wrap enabled.
+
+        Args:
+            title: Panel title shown in bold above the code.
+            content: Python source code to display.
+            level: Log level for this output. Defaults to `LogLevel.INFO`.
+        """
         self.log(
             Panel(
                 Syntax(
@@ -188,6 +259,17 @@ class AgentLogger:
         )
 
     def log_rule(self, title: str, level: int = LogLevel.INFO) -> None:
+        """Print a horizontal rule with a centered title.
+
+        Renders a full-width separator using box-drawing characters, styled
+        with the agent yellow color. Always printed at `LogLevel.INFO`
+        regardless of the `level` argument.
+
+        Args:
+            title: Text to display in the rule.
+            level: Unused; present for API consistency. Output is always at
+                `LogLevel.INFO`.
+        """
         self.log(
             Rule(
                 "[bold white]" + title,
@@ -202,6 +284,20 @@ class AgentLogger:
         # inside Rich markup (e.g. f"[bold]{content}"), any stray "[/...]" sequences or
         # binary-ish characters can crash Rich's markup parser. Render the content as
         # `Text` instead, and apply styling via Text/style, not markup.
+        """Render a task description inside a bordered panel.
+
+        Displays the task content as bold text inside a panel with a subtitle
+        and optional title suffix. Content is rendered as a `rich.Text` object
+        rather than inline markup to guard against stray Rich escape sequences
+        in user-supplied strings.
+
+        Args:
+            content: The task description or input to display.
+            subtitle: Subtitle shown at the bottom-left of the panel, typically
+                the model identifier or run configuration.
+            title: Optional suffix appended to the "New run" panel title.
+            level: Log level for this output. Defaults to `LogLevel.INFO`.
+        """
         safe_content = sanitize_for_rich(content)
         safe_subtitle = sanitize_for_rich(subtitle)
         content_text = Text("\n") + Text(safe_content, style="bold") + Text("\n")
@@ -218,6 +314,16 @@ class AgentLogger:
         )
 
     def log_messages(self, messages: list[dict], level: LogLevel = LogLevel.DEBUG) -> None:
+        """Render the raw message list as formatted JSON.
+
+        Serializes each message via ``.dict()`` and pretty-prints the result
+        with Markdown syntax highlighting. Intended for debugging the exact
+        payload sent to the model.
+
+        Args:
+            messages: List of message objects that expose a ``.dict()`` method.
+            level: Log level for this output. Defaults to `LogLevel.DEBUG`.
+        """
         messages_as_string = "\n".join([json.dumps(message.dict(), indent=4) for message in messages])
         self.log(
             Syntax(
@@ -243,7 +349,7 @@ class AgentLogger:
                 ]
                 table.add_row(name, getattr(tool, "description", str(tool)), "\n".join(args))
 
-            return Group("🛠️ [italic #1E90FF]Tools:[/italic #1E90FF]", table)
+            return Group("\U0001f6e0️ [italic #1E90FF]Tools:[/italic #1E90FF]", table)
 
         def get_agent_headline(agent, name: str | None = None):
             name_headline = f"{name} | " if name else ""
@@ -254,14 +360,14 @@ class AgentLogger:
             parent_tree.add(create_tools_section(agent_obj.tools))
 
             if agent_obj.managed_agents:
-                agents_branch = parent_tree.add("🤖 [italic #1E90FF]Managed agents:")
+                agents_branch = parent_tree.add("\U0001f916 [italic #1E90FF]Managed agents:")
                 for name, managed_agent in agent_obj.managed_agents.items():
                     agent_tree = agents_branch.add(get_agent_headline(managed_agent, name))
                     if managed_agent.__class__.__name__ == "CodeAgent":
                         agent_tree.add(
                             f"✅ [italic #1E90FF]Authorized imports:[/italic #1E90FF] {managed_agent.additional_authorized_imports}"
                         )
-                    agent_tree.add(f"📝 [italic #1E90FF]Description:[/italic #1E90FF] {managed_agent.description}")
+                    agent_tree.add(f"\U0001f4dd [italic #1E90FF]Description:[/italic #1E90FF] {managed_agent.description}")
                     build_agent_tree(agent_tree, managed_agent)
 
         main_tree = Tree(get_agent_headline(agent))
