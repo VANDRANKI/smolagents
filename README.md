@@ -41,9 +41,9 @@ limitations under the License.
 
 🌐 **Model-agnostic**: smolagents supports any LLM. It can be a local `transformers` or `ollama` model, one of [many providers on the Hub](https://huggingface.co/blog/inference-providers), or any model from OpenAI, Anthropic and many others via our [LiteLLM](https://www.litellm.ai/) integration.
 
-👁️ **Modality-agnostic**: Agents support text, vision, video, even audio inputs! Cf [this tutorial](https://huggingface.co/docs/smolagents/examples/web_browser) for vision.
+👁️ **Modality-agnostic**: Agents support text, vision, video, and even audio inputs! See [this tutorial](https://huggingface.co/docs/smolagents/examples/web_browser) for vision.
 
-🛠️ **Tool-agnostic**: you can use tools from any [MCP server](https://huggingface.co/docs/smolagents/reference/tools#smolagents.ToolCollection.from_mcp), from [LangChain](https://huggingface.co/docs/smolagents/reference/tools#smolagents.Tool.from_langchain), you can even use a [Hub Space](https://huggingface.co/docs/smolagents/reference/tools#smolagents.Tool.from_space) as a tool.
+🛠️ **Tool-agnostic**: you can use tools from any [MCP server](https://huggingface.co/docs/smolagents/reference/tools#smolagents.ToolCollection.from_mcp), from [LangChain](https://huggingface.co/docs/smolagents/reference/tools#smolagents.Tool.from_langchain), or even use a [Hub Space](https://huggingface.co/docs/smolagents/reference/tools#smolagents.Tool.from_space) as a tool.
 
 Full documentation can be found [here](https://huggingface.co/docs/smolagents/index).
 
@@ -128,11 +128,12 @@ model = OpenAIModel(
     api_base="https://openrouter.ai/api/v1", # Leave this blank to query OpenAI servers.
     api_key=os.environ["OPENROUTER_API_KEY"], # Switch to the API key for the server you're targeting.
 )
+
 ```
 
 </details>
 <details>
-<summary> <b>Local `transformers` model</b></summary>
+<summary> <b>Local <code>transformers</code> model</b></summary>
 
 ```py
 from smolagents import TransformersModel
@@ -172,14 +173,69 @@ model = AmazonBedrockModel(
 ```
 </details>
 
+## Defining Custom Tools
+
+You can define your own tools in two ways: as a Python function decorated with `@tool`, or as a subclass of `Tool`.
+
+### Using the `@tool` decorator (recommended for simple tools)
+
+```py
+from smolagents import tool, CodeAgent, InferenceClientModel
+
+@tool
+def get_weather(city: str, unit: str = "celsius") -> str:
+    """
+    Returns the current weather for a given city.
+
+    Args:
+        city: The name of the city to get weather for.
+        unit: Temperature unit, either 'celsius' or 'fahrenheit'.
+
+    Returns:
+        A string describing current weather conditions.
+    """
+    # Replace with a real weather API call
+    return f"The weather in {city} is 22 degrees {unit} and sunny."
+
+agent = CodeAgent(tools=[get_weather], model=InferenceClientModel())
+agent.run("What is the weather like in Paris?")
+```
+
+> [!TIP]
+> Type hints and a well-structured docstring are **required** — smolagents uses them to
+> generate the tool schema that the LLM sees. Always annotate your arguments and return
+> type, and describe each argument under an `Args:` section.
+
+### Using the `Tool` class (recommended for stateful or complex tools)
+
+```py
+from smolagents import Tool, CodeAgent, InferenceClientModel
+
+class TranslationTool(Tool):
+    name = "translate"
+    description = "Translates text from one language to another."
+    inputs = {
+        "text": {"type": "string", "description": "The text to translate."},
+        "target_language": {"type": "string", "description": "The target language code (e.g. 'fr', 'de', 'ja')."},
+    }
+    output_type = "string"
+
+    def forward(self, text: str, target_language: str) -> str:
+        # Replace with a real translation API call
+        return f"[Translated to {target_language}]: {text}"
+
+agent = CodeAgent(tools=[TranslationTool()], model=InferenceClientModel())
+agent.run("Translate 'Hello, world!' to Japanese.")
+```
+
 ## CLI
 
-You can run agents from CLI using two commands: `smolagent` and `webagent`.
+You can run agents from the CLI using two commands: `smolagent` and `webagent`.
 
 `smolagent` is a generalist command to run a multi-step `CodeAgent` that can be equipped with various tools.
 
 ```bash
-# Run with direct prompt and options
+# Run with a direct prompt and options
 smolagent "Plan a trip to Tokyo, Kyoto and Osaka between Mar 28 and Apr 7."  --model-type "InferenceClientModel" --model-id "Qwen/Qwen3-Next-80B-A3B-Thinking" --imports pandas numpy --tools web_search
 
 # Run in interactive mode (launches setup wizard when no prompt provided)
@@ -193,7 +249,7 @@ Interactive mode guides you through:
 - Advanced options like additional imports
 - Task prompt input
 
-Meanwhile `webagent` is a specific web-browsing agent using [helium](https://github.com/mherrmann/helium) (read more [here](https://github.com/huggingface/smolagents/blob/main/src/smolagents/vision_web_browser.py)).
+Meanwhile `webagent` is a specific web-browsing agent using [helium](https://github.com/mherrmann/helium) (read more [here](https://github.com/huggingface/smolagents/blob/main/src/smolagents/vision_web_browser.py)).
 
 For instance:
 ```bash
@@ -202,7 +258,7 @@ webagent "go to xyz.com/men, get to sale section, click the first clothing item 
 
 ## How do Code agents work?
 
-Our [`CodeAgent`](https://huggingface.co/docs/smolagents/reference/agents#smolagents.CodeAgent) works mostly like classical ReAct agents - the exception being that the LLM engine writes its actions as Python code snippets.
+Our [`CodeAgent`](https://huggingface.co/docs/smolagents/reference/agents#smolagents.CodeAgent) works mostly like classical ReAct agents — the exception being that the LLM engine writes its actions as Python code snippets.
 
 ```mermaid
 flowchart TB
@@ -252,13 +308,13 @@ Alongside [`CodeAgent`](https://huggingface.co/docs/smolagents/reference/agents#
 We strived to keep abstractions to a strict minimum: the main code in `agents.py` has <1,000 lines of code.
 Still, we implement several types of agents: `CodeAgent` writes its actions as Python code snippets, and the more classic `ToolCallingAgent` leverages built-in tool calling methods. We also have multi-agent hierarchies, import from tool collections, remote code execution, vision models...
 
-By the way, why use a framework at all? Well, because a big part of this stuff is non-trivial. For instance, the code agent has to keep a consistent format for code throughout its system prompt, its parser, the execution. So our framework handles this complexity for you. But of course we still encourage you to hack into the source code and use only the bits that you need, to the exclusion of everything else!
+By the way, why use a framework at all? Well, because a big part of this stuff is non-trivial. For instance, the code agent has to keep a consistent format for code throughout its system prompt, its parser, and the execution. So our framework handles this complexity for you. But of course we still encourage you to hack into the source code and use only the bits that you need, to the exclusion of everything else!
 
 ## How strong are open models for agentic workflows?
 
 We've created [`CodeAgent`](https://huggingface.co/docs/smolagents/reference/agents#smolagents.CodeAgent) instances with some leading models, and compared them on [this benchmark](https://huggingface.co/datasets/m-ric/agents_medium_benchmark_2) that gathers questions from a few different benchmarks to propose a varied blend of challenges.
 
-[Find the benchmarking code here](https://github.com/huggingface/smolagents/blob/main/examples/smolagents_benchmark/run.py) for more detail on the agentic setup used, and see a comparison of using LLMs code agents compared to vanilla (spoilers: code agents works better).
+[Find the benchmarking code here](https://github.com/huggingface/smolagents/blob/main/examples/smolagents_benchmark/run.py) for more detail on the agentic setup used, and see a comparison of using LLMs code agents compared to vanilla (spoilers: code agents work better).
 
 <p align="center">
     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/smolagents/benchmark_code_agents.jpeg" alt="benchmark of different models on agentic workflows. Open model DeepSeek-R1 beats closed-source models." width=60% max-width=500px>
@@ -276,7 +332,7 @@ For security policies, vulnerability reporting, and more information on secure a
 
 ## Contribute
 
-Everyone is welcome to contribute, get started with our [contribution guide](https://github.com/huggingface/smolagents/blob/main/CONTRIBUTING.md).
+Everyone is welcome to contribute — get started with our [contribution guide](https://github.com/huggingface/smolagents/blob/main/CONTRIBUTING.md).
 
 ## Cite smolagents
 
@@ -285,7 +341,7 @@ If you use `smolagents` in your publication, please cite it by using the followi
 ```bibtex
 @Misc{smolagents,
   title =        {`smolagents`: a smol library to build great agentic systems.},
-  author =       {Aymeric Roucher and Albert Villanova del Moral and Thomas Wolf and Leandro von Werra and Erik Kaunismäki},
+  author =       {Aymeric Roucher and Albert Villanova del Moral and Thomas Wolf and Leandro von Werra and Erik Kaunism\"aki},
   howpublished = {\url{https://github.com/huggingface/smolagents}},
   year =         {2025}
 }
