@@ -18,7 +18,7 @@ import pathlib
 import tempfile
 import uuid
 from io import BytesIO
-from typing import Any
+from typing import Any, Optional
 
 import PIL.Image
 import requests
@@ -161,7 +161,7 @@ class AgentImage(AgentType, PIL.Image.Image):
 
             return self._path
 
-    def save(self, output_bytes, format: str = None, **params):
+    def save(self, output_bytes, format: Optional[str] = None, **params):
         """
         Saves the image to a file.
         Args:
