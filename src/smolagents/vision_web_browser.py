@@ -133,6 +133,7 @@ def close_popups() -> str:
     Closes any visible modal or pop-up on the page. Use this to dismiss pop-up windows! This does not work on cookie consent banners.
     """
     webdriver.ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+    return "Closed any visible modal or pop-up by sending the Escape key."
 
 
 def initialize_driver():
