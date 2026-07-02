@@ -96,7 +96,7 @@ class UserInputTool(Tool):
     inputs = {"question": {"type": "string", "description": "The question to ask the user"}}
     output_type = "string"
 
-    def forward(self, question):
+    def forward(self, question: str) -> str:
         user_input = input(f"{question} => Type your answer here:")
         return user_input
 
@@ -625,16 +625,16 @@ class SpeechToTextTool(PipelineTool):
         cls.model_class = WhisperForConditionalGeneration
         return super().__new__(cls)
 
-    def encode(self, audio):
+    def encode(self, audio: Any) -> Any:
         from .agent_types import AgentAudio
 
         audio = AgentAudio(audio).to_raw()
         return self.pre_processor(audio, return_tensors="pt")
 
-    def forward(self, inputs):
+    def forward(self, inputs: Any) -> Any:
         return self.model.generate(inputs["input_features"])
 
-    def decode(self, outputs):
+    def decode(self, outputs: Any) -> str:
         return self.pre_processor.batch_decode(outputs, skip_special_tokens=True)[0]
 
 
