@@ -161,12 +161,12 @@ class AgentImage(AgentType, PIL.Image.Image):
 
             return self._path
 
-    def save(self, output_bytes, format: str = None, **params):
+    def save(self, output_bytes, format: str | None = None, **params):
         """
         Saves the image to a file.
         Args:
             output_bytes (bytes): The output bytes to save the image to.
-            format (str): The format to use for the output image. The format is the same as in PIL.Image.save.
+            format (str, *optional*): The format to use for the output image. The format is the same as in PIL.Image.save. If not provided, PIL will infer it from the output path or default to PNG.
             **params: Additional parameters to pass to PIL.Image.save.
         """
         img = self.to_raw()
