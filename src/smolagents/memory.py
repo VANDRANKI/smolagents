@@ -179,7 +179,7 @@ class PlanningStep(MemoryStep):
             ChatMessage(
                 role=MessageRole.USER, content=[{"type": "text", "text": "Now proceed and carry out this plan."}]
             ),
-            # This second message creates a role change to prevent models models from simply continuing the plan message
+            # This second message creates a role change to prevent models from simply continuing the plan message
         ]
 
 
