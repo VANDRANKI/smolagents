@@ -27,7 +27,7 @@ class ToolCall:
     arguments: Any
     id: str
 
-    def dict(self):
+    def dict(self) -> dict:
         return {
             "id": self.id,
             "type": "function",
@@ -40,7 +40,7 @@ class ToolCall:
 
 @dataclass
 class MemoryStep:
-    def dict(self):
+    def dict(self) -> dict:
         return asdict(self)
 
     def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
@@ -63,7 +63,7 @@ class ActionStep(MemoryStep):
     token_usage: TokenUsage | None = None
     is_final_answer: bool = False
 
-    def dict(self):
+    def dict(self) -> dict:
         # We overwrite the method to parse the tool_calls and action_output manually
         return {
             "step_number": self.step_number,
@@ -158,7 +158,7 @@ class PlanningStep(MemoryStep):
     timing: Timing
     token_usage: TokenUsage | None = None
 
-    def dict(self):
+    def dict(self) -> dict:
         return {
             "model_input_messages": [
                 make_json_serializable(get_dict_from_nested_dataclasses(msg)) for msg in self.model_input_messages
