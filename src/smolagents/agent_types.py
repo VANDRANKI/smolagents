@@ -254,7 +254,8 @@ class AgentAudio(AgentType, str):
 _AGENT_TYPE_MAPPING = {"string": AgentText, "image": AgentImage, "audio": AgentAudio}
 
 
-def handle_agent_input_types(*args, **kwargs):
+def handle_agent_input_types(*args, **kwargs) -> tuple[list, dict]:
+    """Unwrap `AgentType` arguments to their raw values before passing them to a tool."""
     args = [(arg.to_raw() if isinstance(arg, AgentType) else arg) for arg in args]
     kwargs = {k: (v.to_raw() if isinstance(v, AgentType) else v) for k, v in kwargs.items()}
     return args, kwargs
