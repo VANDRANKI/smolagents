@@ -161,12 +161,12 @@ class AgentImage(AgentType, PIL.Image.Image):
 
             return self._path
 
-    def save(self, output_bytes, format: str = None, **params):
+    def save(self, output_bytes, format: str | None = None, **params):
         """
         Saves the image to a file.
         Args:
             output_bytes (bytes): The output bytes to save the image to.
-            format (str): The format to use for the output image. The format is the same as in PIL.Image.save.
+            format (str, *optional*): The format to use for the output image. The format is the same as in PIL.Image.save.
             **params: Additional parameters to pass to PIL.Image.save.
         """
         img = self.to_raw()
@@ -254,7 +254,17 @@ class AgentAudio(AgentType, str):
 _AGENT_TYPE_MAPPING = {"string": AgentText, "image": AgentImage, "audio": AgentAudio}
 
 
-def handle_agent_input_types(*args, **kwargs):
+def handle_agent_input_types(*args: Any, **kwargs: Any) -> tuple[list[Any], dict[str, Any]]:
+    """
+    Unwraps any `AgentType` arguments to their raw values so tools can consume plain Python objects.
+
+    Args:
+        *args: Positional arguments, potentially containing `AgentType` instances.
+        **kwargs: Keyword arguments, potentially containing `AgentType` instances.
+
+    Returns:
+        A tuple `(args, kwargs)` with every `AgentType` argument replaced by its raw value.
+    """
     args = [(arg.to_raw() if isinstance(arg, AgentType) else arg) for arg in args]
     kwargs = {k: (v.to_raw() if isinstance(v, AgentType) else v) for k, v in kwargs.items()}
     return args, kwargs
