@@ -1531,7 +1531,7 @@ class CodeAgent(MultiStepAgent):
         prompt_templates: PromptTemplates | None = None,
         additional_authorized_imports: list[str] | None = None,
         planning_interval: int | None = None,
-        executor: PythonExecutor = None,
+        executor: PythonExecutor | None = None,
         executor_type: Literal["local", "blaxel", "e2b", "modal", "docker", "wasm"] = "local",
         executor_kwargs: dict[str, Any] | None = None,
         max_print_outputs_length: int | None = None,
