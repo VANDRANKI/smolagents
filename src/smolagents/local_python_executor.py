@@ -153,14 +153,16 @@ DANGEROUS_FUNCTIONS = [
 ]
 
 
-def check_safer_result(result: Any, static_tools: dict[str, Callable] = None, authorized_imports: list[str] = None):
+def check_safer_result(
+    result: Any, static_tools: dict[str, Callable] | None = None, authorized_imports: list[str] | None = None
+):
     """
     Checks if a result is safer according to authorized imports and static tools.
 
     Args:
         result (Any): The result to check.
-        static_tools (dict[str, Callable]): Dictionary of static tools.
-        authorized_imports (list[str]): List of authorized imports.
+        static_tools (dict[str, Callable], *optional*): Dictionary of static tools.
+        authorized_imports (list[str], *optional*): List of authorized imports.
 
     Raises:
         InterpreterError: If the result is not safe
