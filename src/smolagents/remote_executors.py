@@ -438,7 +438,7 @@ class E2BExecutor(RemotePythonExecutor):
         # If no main result found, return None
         return CodeOutput(output=None, logs=execution_logs, is_final_answer=False)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up the E2B sandbox and resources."""
         try:
             if hasattr(self, "sandbox"):
@@ -694,7 +694,7 @@ class DockerExecutor(RemotePythonExecutor):
         with closing(create_connection(self.ws_url)) as ws:
             return _websocket_run_code_raise_errors(code, ws, self.logger, self.allow_pickle)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up the Docker container and resources."""
         try:
             if hasattr(self, "container"):
@@ -706,7 +706,7 @@ class DockerExecutor(RemotePythonExecutor):
         except Exception as e:
             self.logger.log_error(f"Error during cleanup: {e}")
 
-    def delete(self):
+    def delete(self) -> None:
         """Ensure cleanup on deletion."""
         self.cleanup()
 
@@ -828,12 +828,12 @@ class ModalExecutor(RemotePythonExecutor):
         with closing(create_connection(self.ws_url)) as ws:
             return _websocket_run_code_raise_errors(code, ws, self.logger, self.allow_pickle)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up the Modal sandbox by terminating it."""
         if hasattr(self, "sandbox"):
             self.sandbox.terminate()
 
-    def delete(self):
+    def delete(self) -> None:
         """Ensure cleanup on deletion."""
         self.cleanup()
 
@@ -1049,7 +1049,7 @@ class BlaxelExecutor(RemotePythonExecutor):
         self.logger.log(f"Requesting sandbox {self.sandbox_name} deletion...", level=LogLevel.INFO)
         delete_sandbox.sync(client=client, sandbox_name=self.sandbox_name)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Sync wrapper to clean up sandbox and resources."""
         # Prevent double cleanup
         if self._cleaned_up:
@@ -1067,11 +1067,11 @@ class BlaxelExecutor(RemotePythonExecutor):
                 del self.sandbox
             self.logger.log("Sandbox cleanup completed", level=LogLevel.INFO)
 
-    def delete(self):
+    def delete(self) -> None:
         """Ensure cleanup on deletion."""
         self.cleanup()
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Ensure cleanup on deletion."""
         try:
             self.cleanup()
@@ -1295,7 +1295,7 @@ class WasmExecutor(RemotePythonExecutor):
         self.logger.log(f"Adding packages to load: {', '.join(additional_imports)}", level=LogLevel.INFO)
         return additional_imports
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up resources used by the executor."""
         if hasattr(self, "session"):
             self.session.close()
@@ -1314,7 +1314,7 @@ class WasmExecutor(RemotePythonExecutor):
 
             shutil.rmtree(self.runner_dir)
 
-    def delete(self):
+    def delete(self) -> None:
         """Ensure cleanup on deletion."""
         self.cleanup()
 
