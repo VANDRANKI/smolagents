@@ -116,7 +116,7 @@ class MessageRole(str, Enum):
     TOOL_RESPONSE = "tool-response"
 
     @classmethod
-    def roles(cls):
+    def roles(cls) -> list[str]:
         return [r.value for r in cls]
 
 
@@ -133,7 +133,7 @@ class ChatMessage:
             return
         self.tool_calls = [_coerce_tool_call(tool_call) for tool_call in self.tool_calls]
 
-    def model_dump_json(self):
+    def model_dump_json(self) -> str:
         return json.dumps(get_dict_from_nested_dataclasses(self, ignore_key="raw"))
 
     @classmethod
@@ -154,7 +154,7 @@ class ChatMessage:
             token_usage=token_usage,
         )
 
-    def dict(self):
+    def dict(self) -> dict:
         return get_dict_from_nested_dataclasses(self)
 
     def render_as_markdown(self) -> str:
