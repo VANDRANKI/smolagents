@@ -433,7 +433,16 @@ def encode_image_base64(image):
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
-def make_image_url(base64_image):
+def make_image_url(base64_image: str) -> str:
+    """Build a `data:` URL for a base64-encoded PNG image.
+
+    Args:
+        base64_image: The base64-encoded PNG image data.
+
+    Returns:
+        A `data:image/png;base64,...` URL embedding the image, suitable for use
+        as an `image_url` in a chat message.
+    """
     return f"data:image/png;base64,{base64_image}"
 
 
