@@ -320,13 +320,25 @@ def timeout(timeout_seconds: int):
     return decorator
 
 
-def get_iterable(obj):
+def get_iterable(obj: Any) -> list:
+    """Coerce an object into a list, for use in interpreted `for` loops and comprehensions.
+
+    Args:
+        obj: The object to coerce. Returned as-is if already a list, otherwise
+            consumed via `__iter__` if iterable.
+
+    Returns:
+        A list containing the elements of `obj`.
+
+    Raises:
+        InterpreterError: If `obj` is not a list and does not support iteration.
+    """
     if isinstance(obj, list):
         return obj
     elif hasattr(obj, "__iter__"):
         return list(obj)
     else:
-        raise InterpreterError("Object is not iterable")
+        raise InterpreterError(f"Object of type {type(obj).__name__} is not iterable")
 
 
 def fix_final_answer_code(code: str) -> str:
