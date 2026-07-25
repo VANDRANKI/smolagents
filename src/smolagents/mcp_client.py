@@ -121,7 +121,7 @@ class MCPClient:
         self._tools: list[Tool] | None = None
         self.connect()
 
-    def connect(self):
+    def connect(self) -> None:
         """Connect to the MCP server and initialize the tools."""
         self._tools: list[Tool] = self._adapter.__enter__()
 
@@ -130,7 +130,7 @@ class MCPClient:
         exc_type: type[BaseException] | None = None,
         exc_value: BaseException | None = None,
         exc_traceback: TracebackType | None = None,
-    ):
+    ) -> None:
         """Disconnect from the MCP server"""
         self._adapter.__exit__(exc_type, exc_value, exc_traceback)
 
@@ -166,6 +166,6 @@ class MCPClient:
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         exc_traceback: TracebackType | None,
-    ):
+    ) -> None:
         """Disconnect from the MCP server."""
         self.disconnect(exc_type, exc_value, exc_traceback)
