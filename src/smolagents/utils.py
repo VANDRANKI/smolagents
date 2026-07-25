@@ -32,6 +32,7 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Callable
 
 import jinja2
+import PIL.Image
 
 
 if TYPE_CHECKING:
@@ -427,13 +428,15 @@ def get_source(obj) -> str:
         raise e from inspect_error
 
 
-def encode_image_base64(image):
+def encode_image_base64(image: PIL.Image.Image) -> str:
+    """Encode a PIL image as a base64-encoded PNG string."""
     buffered = BytesIO()
     image.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
-def make_image_url(base64_image):
+def make_image_url(base64_image: str) -> str:
+    """Build a data URL for a base64-encoded PNG image."""
     return f"data:image/png;base64,{base64_image}"
 
 
