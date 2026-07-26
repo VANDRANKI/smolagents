@@ -48,7 +48,7 @@ limitations under the License.
 Full documentation can be found [here](https://huggingface.co/docs/smolagents/index).
 
 > [!NOTE]
-> Check the our [launch blog post](https://huggingface.co/blog/smolagents) to learn more about `smolagents`!
+> Check out our [launch blog post](https://huggingface.co/blog/smolagents) to learn more about `smolagents`!
 
 ## Quick demo
 
@@ -258,7 +258,7 @@ By the way, why use a framework at all? Well, because a big part of this stuff i
 
 We've created [`CodeAgent`](https://huggingface.co/docs/smolagents/reference/agents#smolagents.CodeAgent) instances with some leading models, and compared them on [this benchmark](https://huggingface.co/datasets/m-ric/agents_medium_benchmark_2) that gathers questions from a few different benchmarks to propose a varied blend of challenges.
 
-[Find the benchmarking code here](https://github.com/huggingface/smolagents/blob/main/examples/smolagents_benchmark/run.py) for more detail on the agentic setup used, and see a comparison of using LLMs code agents compared to vanilla (spoilers: code agents works better).
+[Find the benchmarking code here](https://github.com/huggingface/smolagents/blob/main/examples/smolagents_benchmark/run.py) for more detail on the agentic setup used, and see a comparison of using LLMs code agents compared to vanilla (spoilers: code agents work better).
 
 <p align="center">
     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/smolagents/benchmark_code_agents.jpeg" alt="benchmark of different models on agentic workflows. Open model DeepSeek-R1 beats closed-source models." width=60% max-width=500px>
