@@ -61,7 +61,7 @@ BASE_BUILTIN_MODULES = [
 ]
 
 
-def sanitize_for_rich(value) -> str:
+def sanitize_for_rich(value: Any) -> str:
     """
     Convert arbitrary values (including bytes / control characters) into a safe string for Rich.
     - Decodes bytes-like inputs using UTF-8 with replacement.
