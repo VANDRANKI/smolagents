@@ -223,7 +223,9 @@ def _process_final_answer_step(step_log: FinalAnswerStep) -> Generator:
         )
 
 
-def pull_messages_from_step(step_log: ActionStep | PlanningStep | FinalAnswerStep, skip_model_outputs: bool = False):
+def pull_messages_from_step(
+    step_log: ActionStep | PlanningStep | FinalAnswerStep, skip_model_outputs: bool = False
+) -> Generator:
     """Extract Gradio ChatMessage objects from agent steps with proper nesting.
 
     Args:
