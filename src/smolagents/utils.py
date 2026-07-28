@@ -114,7 +114,7 @@ class AgentExecutionError(AgentError):
 
 
 class AgentMaxStepsError(AgentError):
-    """Exception raised for errors in execution in the agent"""
+    """Exception raised when the agent reaches the maximum number of steps allowed"""
 
     pass
 
