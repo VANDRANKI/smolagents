@@ -42,7 +42,7 @@ console = Console()
 leopard_prompt = "How many seconds would it take for a leopard at full speed to run through Pont des Arts?"
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a CodeAgent with all specified parameters")
     parser.add_argument(
         "prompt",
@@ -107,7 +107,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def interactive_mode():
+def interactive_mode() -> tuple[str, list[str], str, str, str | None, str | None, str | None, list[str], str]:
     """Run the CLI in interactive mode"""
     console.print(
         Panel.fit(

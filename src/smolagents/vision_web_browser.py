@@ -24,7 +24,7 @@ Please navigate to https://en.wikipedia.org/wiki/Chicago and give me a sentence 
 """
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a web browser automation script with a specified model.")
     parser.add_argument(
         "prompt",
