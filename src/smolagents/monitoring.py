@@ -46,7 +46,7 @@ class TokenUsage:
     def __post_init__(self):
         self.total_tokens = self.input_tokens + self.output_tokens
 
-    def dict(self):
+    def dict(self) -> dict[str, int]:
         return {
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
@@ -64,10 +64,10 @@ class Timing:
     end_time: float | None = None
 
     @property
-    def duration(self):
+    def duration(self) -> float | None:
         return None if self.end_time is None else self.end_time - self.start_time
 
-    def dict(self):
+    def dict(self) -> dict[str, float | None]:
         return {
             "start_time": self.start_time,
             "end_time": self.end_time,
