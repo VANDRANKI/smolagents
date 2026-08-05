@@ -17,6 +17,7 @@
 import json
 from dataclasses import dataclass, field
 from enum import IntEnum
+from typing import TYPE_CHECKING
 
 from rich import box
 from rich.console import Console, Group
@@ -28,6 +29,11 @@ from rich.text import Text
 from rich.tree import Tree
 
 from smolagents.utils import sanitize_for_rich
+
+
+if TYPE_CHECKING:
+    from smolagents.memory import MemoryStep
+    from smolagents.models import Model
 
 
 __all__ = ["AgentLogger", "LogLevel", "Monitor", "TokenUsage", "Timing"]
@@ -46,7 +52,7 @@ class TokenUsage:
     def __post_init__(self):
         self.total_tokens = self.input_tokens + self.output_tokens
 
-    def dict(self):
+    def dict(self) -> dict:
         return {
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
@@ -64,10 +70,10 @@ class Timing:
     end_time: float | None = None
 
     @property
-    def duration(self):
+    def duration(self) -> float | None:
         return None if self.end_time is None else self.end_time - self.start_time
 
-    def dict(self):
+    def dict(self) -> dict:
         return {
             "start_time": self.start_time,
             "end_time": self.end_time,
@@ -79,7 +85,7 @@ class Timing:
 
 
 class Monitor:
-    def __init__(self, tracked_model, logger):
+    def __init__(self, tracked_model: "Model", logger: "AgentLogger"):
         self.step_durations = []
         self.tracked_model = tracked_model
         self.logger = logger
@@ -92,12 +98,12 @@ class Monitor:
             output_tokens=self.total_output_token_count,
         )
 
-    def reset(self):
+    def reset(self) -> None:
         self.step_durations = []
         self.total_input_token_count = 0
         self.total_output_token_count = 0
 
-    def update_metrics(self, step_log):
+    def update_metrics(self, step_log: "MemoryStep") -> None:
         """Update the metrics of the monitor.
 
         Args:
