@@ -27,7 +27,7 @@ class MethodChecker(ast.NodeVisitor):
         self.typing_names = {"Any"}
         self.defined_classes = set()
 
-    def visit_arguments(self, node):
+    def visit_arguments(self, node: ast.arguments) -> None:
         """Collect function arguments"""
         self.arg_names = {arg.arg for arg in node.args}
         if node.kwarg:
@@ -35,18 +35,18 @@ class MethodChecker(ast.NodeVisitor):
         if node.vararg:
             self.arg_names.add(node.vararg.arg)
 
-    def visit_Import(self, node):
+    def visit_Import(self, node: ast.Import) -> None:
         for name in node.names:
             actual_name = name.asname or name.name
             self.imports[actual_name] = name.name
 
-    def visit_ImportFrom(self, node):
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         module = node.module or ""
         for name in node.names:
             actual_name = name.asname or name.name
             self.from_imports[actual_name] = (module, name.name)
 
-    def visit_Assign(self, node):
+    def visit_Assign(self, node: ast.Assign) -> None:
         for target in node.targets:
             if isinstance(target, ast.Name):
                 self.assigned_names.add(target.id)
@@ -56,7 +56,7 @@ class MethodChecker(ast.NodeVisitor):
                         self.assigned_names.add(elt.id)
         self.visit(node.value)
 
-    def visit_With(self, node):
+    def visit_With(self, node: ast.With) -> None:
         """Track aliases in 'with' statements (the 'y' in 'with X as y')"""
         for item in node.items:
             if item.optional_vars:  # This is the 'y' in 'with X as y'
@@ -64,20 +64,20 @@ class MethodChecker(ast.NodeVisitor):
                     self.assigned_names.add(item.optional_vars.id)
         self.generic_visit(node)
 
-    def visit_ExceptHandler(self, node):
+    def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
         """Track exception aliases (the 'e' in 'except Exception as e')"""
         if node.name:  # This is the 'e' in 'except Exception as e'
             self.assigned_names.add(node.name)
         self.generic_visit(node)
 
-    def visit_AnnAssign(self, node):
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Track annotated assignments."""
         if isinstance(node.target, ast.Name):
             self.assigned_names.add(node.target.id)
         if node.value:
             self.visit(node.value)
 
-    def visit_For(self, node):
+    def visit_For(self, node: ast.For) -> None:
         target = node.target
         if isinstance(target, ast.Name):
             self.assigned_names.add(target.id)
@@ -87,7 +87,7 @@ class MethodChecker(ast.NodeVisitor):
                     self.assigned_names.add(elt.id)
         self.generic_visit(node)
 
-    def _handle_comprehension_generators(self, generators):
+    def _handle_comprehension_generators(self, generators: list[ast.comprehension]) -> None:
         """Helper method to handle generators in all types of comprehensions"""
         for generator in generators:
             if isinstance(generator.target, ast.Name):
@@ -97,31 +97,31 @@ class MethodChecker(ast.NodeVisitor):
                     if isinstance(elt, ast.Name):
                         self.assigned_names.add(elt.id)
 
-    def visit_ListComp(self, node):
+    def visit_ListComp(self, node: ast.ListComp) -> None:
         """Track variables in list comprehensions"""
         self._handle_comprehension_generators(node.generators)
         self.generic_visit(node)
 
-    def visit_DictComp(self, node):
+    def visit_DictComp(self, node: ast.DictComp) -> None:
         """Track variables in dictionary comprehensions"""
         self._handle_comprehension_generators(node.generators)
         self.generic_visit(node)
 
-    def visit_SetComp(self, node):
+    def visit_SetComp(self, node: ast.SetComp) -> None:
         """Track variables in set comprehensions"""
         self._handle_comprehension_generators(node.generators)
         self.generic_visit(node)
 
-    def visit_Attribute(self, node):
+    def visit_Attribute(self, node: ast.Attribute) -> None:
         if not (isinstance(node.value, ast.Name) and node.value.id == "self"):
             self.generic_visit(node)
 
-    def visit_ClassDef(self, node):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Track class definitions"""
         self.defined_classes.add(node.name)
         self.generic_visit(node)
 
-    def visit_Name(self, node):
+    def visit_Name(self, node: ast.Name) -> None:
         if isinstance(node.ctx, ast.Load):
             if not (
                 node.id in _BUILTIN_NAMES
@@ -137,7 +137,7 @@ class MethodChecker(ast.NodeVisitor):
             ):
                 self.errors.append(f"Name '{node.id}' is undefined.")
 
-    def visit_Call(self, node):
+    def visit_Call(self, node: ast.Call) -> None:
         if isinstance(node.func, ast.Name):
             if not (
                 node.func.id in _BUILTIN_NAMES
