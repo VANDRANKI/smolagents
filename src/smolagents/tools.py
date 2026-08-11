@@ -838,12 +838,12 @@ def launch_gradio_demo(tool: Tool):
 
 
 def load_tool(
-    repo_id,
+    repo_id: str,
     model_repo_id: str | None = None,
     token: str | None = None,
     trust_remote_code: bool = False,
     **kwargs,
-):
+) -> Tool:
     """
     Main function to quickly load a tool from the Hub.
 
@@ -879,12 +879,12 @@ def load_tool(
     )
 
 
-def add_description(description):
+def add_description(description: str) -> Callable[[Callable], Callable]:
     """
     A decorator that adds a description to a function.
     """
 
-    def inner(func):
+    def inner(func: Callable) -> Callable:
         func.description = description
         func.name = func.__name__
         return func
