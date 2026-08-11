@@ -17,7 +17,7 @@ import os
 import re
 import shutil
 from pathlib import Path
-from typing import Generator
+from typing import Any, Generator
 
 from smolagents.agent_types import AgentAudio, AgentImage, AgentText
 from smolagents.agents import MultiStepAgent, PlanningStep
@@ -332,7 +332,7 @@ class GradioUI:
         shutil.copy(file_path, dest_path)
         return dest_path
 
-    def upload_file(self, file, file_uploads_log: list, allowed_file_types: list | None = None):
+    def upload_file(self, file, file_uploads_log: list, allowed_file_types: list | None = None) -> tuple[Any, list]:
         """
         Handle file upload with validation.
 
@@ -419,7 +419,7 @@ class GradioUI:
                     all_messages[streaming_msg_idx] = msg
                 yield all_messages
 
-    def launch(self, share: bool = True, **kwargs):
+    def launch(self, share: bool = True, **kwargs) -> None:
         """
         Launch the Gradio app with the agent interface.
 
