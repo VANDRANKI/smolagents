@@ -17,6 +17,7 @@
 import json
 from dataclasses import dataclass, field
 from enum import IntEnum
+from typing import TYPE_CHECKING
 
 from rich import box
 from rich.console import Console, Group
@@ -28,6 +29,10 @@ from rich.text import Text
 from rich.tree import Tree
 
 from smolagents.utils import sanitize_for_rich
+
+
+if TYPE_CHECKING:
+    from smolagents.models import Model
 
 
 __all__ = ["AgentLogger", "LogLevel", "Monitor", "TokenUsage", "Timing"]
@@ -79,7 +84,7 @@ class Timing:
 
 
 class Monitor:
-    def __init__(self, tracked_model, logger):
+    def __init__(self, tracked_model: "Model", logger: "AgentLogger"):
         self.step_durations = []
         self.tracked_model = tracked_model
         self.logger = logger
