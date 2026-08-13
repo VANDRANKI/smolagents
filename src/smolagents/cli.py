@@ -192,6 +192,22 @@ def load_model(
     api_key: str | None = None,
     provider: str | None = None,
 ) -> Model:
+    """Instantiate the `Model` subclass matching the requested model type.
+
+    Args:
+        model_type (`str`): One of `"OpenAIModel"`, `"LiteLLMModel"`, `"TransformersModel"`,
+            or `"InferenceClientModel"`.
+        model_id (`str`): The model identifier to pass to the chosen model class.
+        api_base (`str`, *optional*): The base URL for the model API, if applicable.
+        api_key (`str`, *optional*): The API key to authenticate with, if applicable.
+        provider (`str`, *optional*): The inference provider to use, if applicable.
+
+    Returns:
+        `Model`: An instance of the model class corresponding to `model_type`.
+
+    Raises:
+        ValueError: If `model_type` is not one of the supported model types.
+    """
     if model_type == "OpenAIModel":
         return OpenAIModel(
             api_key=api_key or os.getenv("FIREWORKS_API_KEY"),
