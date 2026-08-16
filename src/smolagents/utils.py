@@ -35,6 +35,8 @@ import jinja2
 
 
 if TYPE_CHECKING:
+    import PIL.Image
+
     from smolagents.memory import AgentLogger
 
 
@@ -427,13 +429,15 @@ def get_source(obj) -> str:
         raise e from inspect_error
 
 
-def encode_image_base64(image):
+def encode_image_base64(image: "PIL.Image.Image") -> str:
+    """Encode a PIL image as a base64-encoded PNG string."""
     buffered = BytesIO()
     image.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
-def make_image_url(base64_image):
+def make_image_url(base64_image: str) -> str:
+    """Wrap a base64-encoded PNG string in a `data:image/png;base64,` URL."""
     return f"data:image/png;base64,{base64_image}"
 
 
@@ -445,6 +449,7 @@ def make_init_file(folder: str | Path):
 
 
 def is_valid_name(name: str) -> bool:
+    """Check whether `name` is a valid Python identifier and not a reserved keyword."""
     return name.isidentifier() and not keyword.iskeyword(name) if isinstance(name, str) else False
 
 
