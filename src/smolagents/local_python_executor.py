@@ -332,7 +332,7 @@ def get_iterable(obj):
 def fix_final_answer_code(code: str) -> str:
     """
     Sometimes an LLM can try to assign a variable to final_answer, which would break the final_answer() tool.
-    This function fixes this behaviour by replacing variable assignments to final_answer with final_answer_variable,
+    This function fixes this behavior by replacing variable assignments to final_answer with final_answer_variable,
     while preserving function calls to final_answer().
     """
     # First, find if there's a direct assignment to final_answer
