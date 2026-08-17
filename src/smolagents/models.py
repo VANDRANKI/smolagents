@@ -196,7 +196,7 @@ def parse_json_if_needed(arguments: str | dict) -> str | dict:
     else:
         try:
             return json.loads(arguments)
-        except Exception:
+        except json.JSONDecodeError:
             return arguments
 
 
