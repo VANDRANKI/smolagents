@@ -229,7 +229,7 @@ class AgentMemory:
         self.system_prompt: SystemPromptStep = SystemPromptStep(system_prompt=system_prompt)
         self.steps: list[TaskStep | ActionStep | PlanningStep] = []
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset the agent's memory, clearing all steps and keeping the system prompt."""
         self.steps = []
 
@@ -286,7 +286,7 @@ class CallbackRegistry:
     def __init__(self):
         self._callbacks: dict[Type[MemoryStep], list[Callable]] = {}
 
-    def register(self, step_cls: Type[MemoryStep], callback: Callable):
+    def register(self, step_cls: Type[MemoryStep], callback: Callable) -> None:
         """Register a callback for a step class.
 
         Args:
